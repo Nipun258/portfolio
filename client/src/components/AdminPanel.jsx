@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 
 // Configure axios defaults
 axios.defaults.withCredentials = true;
@@ -20,6 +19,7 @@ const AdminPanel = () => {
 
   const [skills, setSkills] = useState([]);
   const [newSkill, setNewSkill] = useState({ name: '', level: '' });
+  const [editingSkill, setEditingSkill] = useState(null);
 
   const [projects, setProjects] = useState([]);
   const [newProject, setNewProject] = useState({
@@ -161,6 +161,24 @@ const AdminPanel = () => {
     }
   };
 
+  const handleEditSkill = async (e) => {
+    e.preventDefault();
+    if (!editingSkill) return;
+
+    try {
+      await axios.put(`/api/skills/${editingSkill._id}`, {
+        name: editingSkill.name,
+        level: editingSkill.level
+      });
+      setEditingSkill(null);
+      toast.success('Skill updated successfully!');
+      fetchData();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Error updating skill');
+      console.error('Error updating skill:', error);
+    }
+  };
+
   const validateProject = () => {
     if (!newProject.title.trim()) {
       toast.error('Project title is required');
@@ -299,14 +317,51 @@ const AdminPanel = () => {
               {skills.map((skill) => (
                 <div key={skill._id} className="card bg-base-100 shadow-xl">
                   <div className="card-body">
-                    <h3 className="card-title">{skill.name}</h3>
-                    <p>Level: {skill.level}</p>
-                    <button
-                      onClick={() => handleDeleteSkill(skill._id)}
-                      className="btn btn-error btn-sm"
-                    >
-                      Delete
-                    </button>
+                    {editingSkill && editingSkill._id === skill._id ? (
+                      <form onSubmit={handleEditSkill} className="space-y-2">
+                        <input
+                          type="text"
+                          value={editingSkill.name}
+                          onChange={(e) => setEditingSkill({ ...editingSkill, name: e.target.value })}
+                          className="input input-bordered w-full"
+                        />
+                        <input
+                          type="text"
+                          value={editingSkill.level}
+                          onChange={(e) => setEditingSkill({ ...editingSkill, level: e.target.value })}
+                          className="input input-bordered w-full"
+                        />
+                        <div className="flex gap-2">
+                          <button type="submit" className="btn btn-primary btn-sm">Save</button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingSkill(null)}
+                            className="btn btn-ghost btn-sm"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <>
+                        <h3 className="card-title">{skill.name}</h3>
+                        <p>Level: {skill.level}</p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setEditingSkill(skill)}
+                            className="btn btn-primary btn-sm"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSkill(skill._id)}
+                            className="btn btn-error btn-sm"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}

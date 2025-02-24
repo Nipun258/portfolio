@@ -1,6 +1,6 @@
 import express from 'express';
 import { getProjects, createProject } from '../controllers/projectController.js';
-import { getSkills, createSkill } from '../controllers/skillController.js';
+import { getSkills, createSkill, updateSkill, deleteSkill } from '../controllers/skillController.js';
 import { getPersonalDetails, createPersonalDetails, updatePersonalDetails } from '../controllers/personalDetailsController.js';
 
 const router = express.Router();
@@ -12,6 +12,8 @@ router.post('/projects', createProject);
 // Skill routes
 router.get('/skills', getSkills);
 router.post('/skills', createSkill);
+router.put('/skills/:id', updateSkill);
+router.delete('/skills/:id', deleteSkill);
 
 // Personal Details routes
 router.get('/personal-details', getPersonalDetails);
