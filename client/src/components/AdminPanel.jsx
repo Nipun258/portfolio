@@ -21,6 +21,8 @@ const AdminPanel = () => {
   const [newSkill, setNewSkill] = useState({ name: '', level: '' });
   const [editingSkill, setEditingSkill] = useState(null);
 
+  const [editingProject, setEditingProject] = useState(null);
+
   const [projects, setProjects] = useState([]);
   const [newProject, setNewProject] = useState({
     title: '',
@@ -238,6 +240,47 @@ const AdminPanel = () => {
     }
   };
 
+  const handleEditProject = async (e) => {
+    e.preventDefault();
+    if (!editingProject) return;
+
+    // Validate project fields
+    if (!editingProject.title.trim()) {
+      toast.error('Project title is required');
+      return;
+    }
+    if (!editingProject.description.trim()) {
+      toast.error('Project description is required');
+      return;
+    }
+    if (!editingProject.technologies.trim()) {
+      toast.error('Technologies are required');
+      return;
+    }
+    if (editingProject.imageUrl && !/^https?:\/\/.+/.test(editingProject.imageUrl)) {
+      toast.error('Please enter a valid image URL');
+      return;
+    }
+    if (editingProject.liveUrl && !/^https?:\/\/.+/.test(editingProject.liveUrl)) {
+      toast.error('Please enter a valid live demo URL');
+      return;
+    }
+    if (editingProject.githubUrl && !/^https?:\/\/(www\.)?github\.com\/.+/.test(editingProject.githubUrl)) {
+      toast.error('Please enter a valid GitHub URL');
+      return;
+    }
+
+    try {
+      await axios.put(`/api/projects/${editingProject._id}`, editingProject);
+      setEditingProject(null);
+      toast.success('Project updated successfully!');
+      fetchData();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Error updating project');
+      console.error('Error updating project:', error);
+    }
+  };
+
   const renderContent = () => {
     switch (activeSection) {
       case 'personal':
@@ -419,22 +462,88 @@ const AdminPanel = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {projects.map((project) => (
                 <div key={project._id} className="card bg-base-100 shadow-xl">
-                  <figure><img src={project.imageUrl} alt={project.title} /></figure>
-                  <div className="card-body">
-                    <h3 className="card-title">{project.title}</h3>
-                    <p>{project.description}</p>
-                    <p className="text-sm">Technologies: {project.technologies}</p>
-                    <div className="card-actions justify-end">
-                      <a href={project.liveUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-sm">Live Demo</a>
-                      <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">GitHub</a>
-                      <button
-                        onClick={() => handleDeleteProject(project._id)}
-                        className="btn btn-error btn-sm"
-                      >
-                        Delete
-                      </button>
+                  {editingProject && editingProject._id === project._id ? (
+                    <div className="card-body">
+                      <form onSubmit={handleEditProject} className="space-y-4">
+                        <input
+                          type="text"
+                          placeholder="Project title"
+                          value={editingProject.title}
+                          onChange={(e) => setEditingProject({ ...editingProject, title: e.target.value })}
+                          className="input input-bordered w-full"
+                        />
+                        <textarea
+                          placeholder="Project description"
+                          value={editingProject.description}
+                          onChange={(e) => setEditingProject({ ...editingProject, description: e.target.value })}
+                          className="textarea textarea-bordered w-full h-32"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Technologies (comma-separated)"
+                          value={editingProject.technologies}
+                          onChange={(e) => setEditingProject({ ...editingProject, technologies: e.target.value })}
+                          className="input input-bordered w-full"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Image URL"
+                          value={editingProject.imageUrl}
+                          onChange={(e) => setEditingProject({ ...editingProject, imageUrl: e.target.value })}
+                          className="input input-bordered w-full"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Live URL"
+                          value={editingProject.liveUrl}
+                          onChange={(e) => setEditingProject({ ...editingProject, liveUrl: e.target.value })}
+                          className="input input-bordered w-full"
+                        />
+                        <input
+                          type="text"
+                          placeholder="GitHub URL"
+                          value={editingProject.githubUrl}
+                          onChange={(e) => setEditingProject({ ...editingProject, githubUrl: e.target.value })}
+                          className="input input-bordered w-full"
+                        />
+                        <div className="flex gap-2">
+                          <button type="submit" className="btn btn-primary btn-sm">Save</button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingProject(null)}
+                            className="btn btn-ghost btn-sm"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
                     </div>
-                  </div>
+                  ) : (
+                    <>
+                      <figure><img src={project.imageUrl} alt={project.title} /></figure>
+                      <div className="card-body">
+                        <h3 className="card-title">{project.title}</h3>
+                        <p>{project.description}</p>
+                        <p className="text-sm">Technologies: {project.technologies}</p>
+                        <div className="card-actions justify-end">
+                          <a href={project.liveUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-sm">Live Demo</a>
+                          <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">GitHub</a>
+                          <button
+                            onClick={() => setEditingProject(project)}
+                            className="btn btn-primary btn-sm"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProject(project._id)}
+                            className="btn btn-error btn-sm"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
